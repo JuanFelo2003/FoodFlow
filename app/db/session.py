@@ -1,5 +1,6 @@
 from sqlalchemy import URL, create_engine
 from sqlalchemy.orm import sessionmaker
+
 from app.core.config import settings
 
 
@@ -22,3 +23,11 @@ SessionLocal = sessionmaker(
     autoflush=False,
     expire_on_commit=False,
 )
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
