@@ -1,6 +1,7 @@
 ﻿from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.security import create_access_token
 from app.db.session import get_db
 from app.services.auth_service import AuthService
 
@@ -26,8 +27,14 @@ def login(
             detail="Credenciales inválidas",
         )
 
+    access_token = create_access_token(
+        employee_id=employee.id,
+        role=employee.role.value,
+    )
+
     return {
-        "message": "Autenticación exitosa",
+        "access_token": access_token,
+        "token_type": "bearer",
         "employee": {
             "id": employee.id,
             "name": employee.name,
