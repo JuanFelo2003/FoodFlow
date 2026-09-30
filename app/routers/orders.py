@@ -97,9 +97,18 @@ def update_order_status(
     order_status: OrderStatus,
     db: Session = Depends(get_db),
     current_employee: dict = Depends(
-        require_role("admin", "waiter", "cashier")
+        require_role("admin", "waiter", "cashier", "kitchen")
     ),
 ):
+    if (
+        order_status == OrderStatus.SERVED
+        and current_employee["role"] not in ("admin", "waiter", "kitchen")
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo el mesero, cocina o administrador pueden marcar el pedido como servido",
+        )
+
     if (
         order_status == OrderStatus.PAID
         and current_employee["role"] not in ("admin", "cashier")
