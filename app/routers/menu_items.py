@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.permissions import require_role
@@ -44,7 +44,6 @@ def create_menu_item(
     price: Decimal,
     description: str | None = None,
     available: bool = True,
-    image_url: str | None = None,
     db: Session = Depends(get_db),
     current_employee: dict = Depends(require_role("admin")),
 ):
@@ -56,7 +55,6 @@ def create_menu_item(
             description=description,
             price=price,
             available=available,
-            image_url=image_url,
         )
     except ValueError as error:
         raise HTTPException(
@@ -72,7 +70,6 @@ def update_menu_item(
     price: Decimal,
     description: str | None = None,
     available: bool = True,
-    image_url: str | None = None,
     db: Session = Depends(get_db),
     current_employee: dict = Depends(require_role("admin")),
 ):
@@ -85,7 +82,6 @@ def update_menu_item(
             description=description,
             price=price,
             available=available,
-            image_url=image_url,
         )
     except ValueError as error:
         raise HTTPException(
@@ -107,5 +103,26 @@ def delete_menu_item(
     except ValueError as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        )
+
+
+@router.post("/{menu_item_id}/image")
+def upload_menu_image(
+    menu_item_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_employee: dict = Depends(require_role("admin")),
+):
+    service = MenuItemService(db)
+
+    try:
+        return service.upload_menu_image(
+            menu_item_id=menu_item_id,
+            file=file,
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(error),
         )

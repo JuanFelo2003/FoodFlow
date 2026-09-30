@@ -1,15 +1,18 @@
 from decimal import Decimal
 
+from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from app.models.menu_item import MenuItem
 from app.repositories.menu_item_repository import MenuItemRepository
+from app.services.storage_service import StorageService
 
 
 class MenuItemService:
 
     def __init__(self, db: Session):
         self.repository = MenuItemRepository(db)
+        self.storage_service = StorageService()
 
     def create_menu_item(
         self,
@@ -17,7 +20,6 @@ class MenuItemService:
         description: str | None,
         price: Decimal,
         available: bool = True,
-        image_url: str | None = None,
     ) -> MenuItem:
         if not name.strip():
             raise ValueError("El nombre del producto es obligatorio")
@@ -30,7 +32,6 @@ class MenuItemService:
             description=description,
             price=price,
             available=available,
-            image_url=image_url,
         )
 
         return self.repository.create(menu_item)
@@ -51,7 +52,6 @@ class MenuItemService:
         description: str | None,
         price: Decimal,
         available: bool,
-        image_url: str | None = None,
     ) -> MenuItem:
         menu_item = self.repository.get_by_id(menu_item_id)
 
@@ -68,6 +68,24 @@ class MenuItemService:
         menu_item.description = description
         menu_item.price = price
         menu_item.available = available
+
+        return self.repository.update(menu_item)
+
+    def upload_menu_image(
+        self,
+        menu_item_id: int,
+        file: UploadFile,
+    ) -> MenuItem:
+        menu_item = self.repository.get_by_id(menu_item_id)
+
+        if menu_item is None:
+            raise ValueError("El producto no existe")
+
+        image_url = self.storage_service.upload_menu_image(
+            file=file,
+            menu_item_id=menu_item_id,
+        )
+
         menu_item.image_url = image_url
 
         return self.repository.update(menu_item)
