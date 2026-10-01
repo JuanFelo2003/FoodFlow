@@ -8,6 +8,7 @@ __pycache__/
 # Variables de entorno
 .env
 .env.*
+!.env.example
 
 # Pytest
 .pytest_cache/
