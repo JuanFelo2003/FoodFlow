@@ -1,6 +1,9 @@
+from uuid import UUID
+
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
+from app.core.supabase import supabase_admin
 from app.models.employee import Employee, EmployeeRole
 from app.repositories.employee_repository import EmployeeRepository
 
@@ -31,15 +34,37 @@ class EmployeeService:
         if not password:
             raise ValueError("La contraseña es obligatoria")
 
+        # Los empleados nuevos se crean directamente en Supabase Auth.
+        auth_response = supabase_admin.auth.admin.create_user(
+            {
+                "email": email.strip(),
+                "password": password,
+                "email_confirm": True,
+            }
+        )
+
+        if auth_response.user is None:
+            raise RuntimeError("Supabase Auth no devolvió el usuario creado.")
+
         employee = Employee(
             name=name.strip(),
             email=email.strip(),
-            password_hash=hash_password(password),
+            password_hash=None,
+            auth_user_id=UUID(str(auth_response.user.id)),
             role=role,
             active=True,
         )
 
-        return self.repository.create(employee)
+        try:
+            return self.repository.create(employee)
+        except Exception:
+            try:
+                supabase_admin.auth.admin.delete_user(
+                    str(auth_response.user.id)
+                )
+            except Exception:
+                pass
+            raise
 
     def get_employee(
         self,
@@ -77,12 +102,29 @@ class EmployeeService:
         if not email.strip():
             raise ValueError("El correo del empleado es obligatorio")
 
-        employee.name = name.strip()
-        employee.email = email.strip()
-        employee.role = role
+        new_email = email.strip()
 
-        if password:
+        # Mantiene sincronizados el correo y la contraseña de Auth
+        # cuando el empleado ya fue vinculado a Supabase.
+        if employee.auth_user_id is not None:
+            attributes = {
+                "email": new_email,
+                "email_confirm": True,
+            }
+            if password:
+                attributes["password"] = password
+
+            supabase_admin.auth.admin.update_user_by_id(
+                str(employee.auth_user_id),
+                attributes,
+            )
+        elif password:
+            # Empleado antiguo que aún no ha iniciado sesión y migrado.
             employee.password_hash = hash_password(password)
+
+        employee.name = name.strip()
+        employee.email = new_email
+        employee.role = role
 
         return self.repository.update(employee)
 

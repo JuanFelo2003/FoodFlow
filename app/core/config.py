@@ -7,10 +7,10 @@ class Settings(BaseSettings):
     database_name: str
     database_user: str
     database_password: str
-    jwt_secret_key: str
 
     supabase_url: str
     supabase_key: str
+    supabase_service_role_key: str
     supabase_bucket: str
 
     model_config = SettingsConfigDict(

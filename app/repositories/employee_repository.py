@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -15,6 +17,12 @@ class EmployeeRepository:
 
     def get_by_email(self, email: str) -> Employee | None:
         statement = select(Employee).where(Employee.email == email)
+        return self.db.scalar(statement)
+
+    def get_by_auth_user_id(self, auth_user_id: UUID) -> Employee | None:
+        statement = select(Employee).where(
+            Employee.auth_user_id == auth_user_id
+        )
         return self.db.scalar(statement)
 
     def get_all(self) -> list[Employee]:

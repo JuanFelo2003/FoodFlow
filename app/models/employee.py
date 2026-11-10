@@ -1,6 +1,8 @@
 from enum import Enum
+from uuid import UUID
 
 from sqlalchemy import Boolean, Enum as SQLEnum, String
+from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -23,7 +25,12 @@ class Employee(Base):
         unique=True,
         nullable=False,
     )
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    auth_user_id: Mapped[UUID | None] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        unique=True,
+        nullable=True,
+    )
     role: Mapped[EmployeeRole] = mapped_column(
         SQLEnum(EmployeeRole),
         nullable=False,
