@@ -13,7 +13,7 @@ from app.routers.payments import router as payments_router
 app = FastAPI(
     title="FoodFlow API",
     description="API para el sistema de gestión de restaurantes FoodFlow.",
-    version="0.1.0",
+    version="0.2.0",
 )
 
 app.include_router(auth_router)
