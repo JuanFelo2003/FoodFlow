@@ -1,25 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from supabase import create_client
 
+from app.core.config import settings
 from app.db.session import get_db
+from app.schemas.auth import LoginRequest, RefreshRequest
 from app.services.auth_service import AuthService
 
-router = APIRouter(
-    prefix="/auth",
-    tags=["Autenticación"],
-)
+router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
 
 @router.post("/login")
-def login(
-    email: str,
-    password: str,
-    db: Session = Depends(get_db),
-):
+def login(payload: LoginRequest, db: Session = Depends(get_db)):
     auth_service = AuthService(db)
 
     try:
-        result = auth_service.authenticate(email, password)
+        result = auth_service.authenticate(payload.email, payload.password)
     except Exception:
         raise HTTPException(
             status_code=503,
@@ -27,10 +23,7 @@ def login(
         )
 
     if result is None:
-        raise HTTPException(
-            status_code=401,
-            detail="Credenciales inválidas",
-        )
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
     employee, session = result
 
@@ -46,18 +39,12 @@ def login(
         },
     }
 
+
 @router.post("/refresh")
-def refresh(refresh_token: str):
-    from app.core.config import settings
-    from supabase import create_client
-
+def refresh(payload: RefreshRequest):
     try:
-        auth_client = create_client(
-            settings.supabase_url,
-            settings.supabase_key,
-        )
-
-        response = auth_client.auth.refresh_session(refresh_token)
+        auth_client = create_client(settings.supabase_url, settings.supabase_key)
+        response = auth_client.auth.refresh_session(payload.refresh_token)
 
         if response.session is None:
             raise HTTPException(
@@ -70,10 +57,8 @@ def refresh(refresh_token: str):
             "refresh_token": response.session.refresh_token,
             "token_type": "bearer",
         }
-
     except HTTPException:
         raise
-    
     except Exception:
         raise HTTPException(
             status_code=401,

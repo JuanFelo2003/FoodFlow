@@ -8,6 +8,8 @@ from app.core.supabase import supabase
 
 class StorageService:
 
+    MAX_FILE_SIZE = 5 * 1024 * 1024
+
     ALLOWED_CONTENT_TYPES = {
         "image/jpeg": "jpg",
         "image/png": "png",
@@ -24,7 +26,13 @@ class StorageService:
 
         file_path = f"menu/{menu_item_id}-{uuid4()}.{extension}"
 
-        file_data = file.file.read()
+        file_data = file.file.read(self.MAX_FILE_SIZE + 1)
+
+        if not file_data:
+            raise ValueError("La imagen está vacía")
+
+        if len(file_data) > self.MAX_FILE_SIZE:
+            raise ValueError("La imagen no puede superar los 5 MB")
 
         supabase.storage.from_(settings.supabase_bucket).upload(
             file_path,
