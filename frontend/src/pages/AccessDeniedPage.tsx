@@ -1,14 +1,5 @@
 import { Link } from "react-router-dom";
 
-function AccessDeniedPage() {
-  return (
-    <main>
-      <h1>403</h1>
-      <h2>Acceso denegado</h2>
-      <p>No tienes permisos para acceder a esta sección.</p>
-      <Link to="/dashboard">Volver al panel principal</Link>
-    </main>
-  );
+export default function AccessDeniedPage() {
+  return <main className="center-page"><div className="center-card"><span className="center-card__code">403</span><h1>Acceso denegado</h1><p>Tu rol no tiene permisos para acceder a esta sección.</p><Link className="button button--primary" to="/dashboard">Volver al panel</Link></div></main>;
 }
-
-export default AccessDeniedPage;
