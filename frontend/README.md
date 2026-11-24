@@ -1,75 +1,51 @@
-# React + TypeScript + Vite
+# FoodFlow Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación web de gestión de restaurantes construida con React, TypeScript, Vite y React Router.
 
-Currently, two official plugins are available:
+## Requisitos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js 20.19+ o 22.12+
+- npm
+- Backend FoodFlow ejecutándose en `http://127.0.0.1:8000`
 
-## React Compiler
+## Configuración
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. Instala las dependencias:
 
-## Expanding the ESLint configuration
+   ```bash
+   npm ci
+   ```
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+2. Crea el archivo `.env` a partir de `.env.example`:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+   ```env
+   VITE_API_URL=/api
+   ```
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+3. Inicia el servidor de desarrollo:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+   ```bash
+   npm run dev
+   ```
 
+Vite reenvía las solicitudes `/api` al backend local. Si el backend se ejecuta en otra dirección, actualiza `frontend/vite.config.ts`.
+
+## Verificaciones
+
+```bash
+npm run lint
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## Roles
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- `admin`: empleados, menú, mesas, pedidos, cuentas y pagos.
+- `waiter`: menú, mesas, pedidos y generación/ajuste de cuentas.
+- `cashier`: consulta de mesas y pedidos, consulta de cuentas y registro/anulación de pagos.
+- `kitchen`: menú y panel de cocina con actualización periódica cada cinco segundos.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Las imágenes del menú aceptan JPG, PNG y WEBP, con un límite de 5 MB.
 
-```
+## Estilos
+
+Los colores y tokens visuales están centralizados en `src/styles/variables.css`. Los estilos se organizan en archivos por componentes, estructura y páginas.
