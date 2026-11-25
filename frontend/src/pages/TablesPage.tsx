@@ -26,6 +26,7 @@ export default function TablesPage() {
   const [number, setNumber] = useState("");
   const [selected, setSelected] = useState<RestaurantTable | null>(null);
   const [relatedOrders, setRelatedOrders] = useState<Order[]>([]);
+  const [relatedOrdersLoading, setRelatedOrdersLoading] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async (nextFilter: "all" | TableStatus) => {
@@ -86,15 +87,20 @@ export default function TablesPage() {
 
   async function openTable(table: RestaurantTable) {
     setSelected(table);
+    setRelatedOrders([]);
+    setRelatedOrdersLoading(true);
+    setError("");
+
     try {
       setRelatedOrders(await ordersApi.byTable(table.id));
-      setError("");
     } catch (cause) {
       setError(
         cause instanceof Error
           ? cause.message
           : "No se pudieron consultar los pedidos de la mesa.",
       );
+    } finally {
+      setRelatedOrdersLoading(false);
     }
   }
 
@@ -272,7 +278,9 @@ export default function TablesPage() {
               <StatusBadge status={selected.status} />
             </div>
             <h3>Historial de pedidos</h3>
-            {relatedOrders.length ? (
+            {relatedOrdersLoading ? (
+              <Loading />
+            ) : relatedOrders.length ? (
               relatedOrders.map((order) => (
                 <div className="list-row" key={order.id}>
                   <span>Pedido #{order.id}</span>
@@ -286,7 +294,7 @@ export default function TablesPage() {
               <button
                 className="button button--primary button--full"
                 onClick={() => void createOrder()}
-                disabled={busy}
+                disabled={busy || relatedOrdersLoading}
               >
                 {busy ? "Creando pedido..." : "＋ Crear pedido para esta mesa"}
               </button>

@@ -48,6 +48,7 @@ export default function BillingPage() {
   const [historyOrders, setHistoryOrders] = useState<Order[]>([]);
   const [tables, setTables] = useState<RestaurantTable[]>([]);
   const [loading, setLoading] = useState(true);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [selected, setSelected] = useState<Order | null>(null);
@@ -106,6 +107,7 @@ export default function BillingPage() {
     setSelectedIsHistory(isHistory);
     setAccount(null);
     setPayment(null);
+    setDetailLoading(true);
     setError("");
     setNotice("");
     setForm({
@@ -142,6 +144,8 @@ export default function BillingPage() {
             : "No se pudo consultar la cuenta.",
         );
       }
+    } finally {
+      setDetailLoading(false);
     }
   }
 
@@ -247,6 +251,7 @@ export default function BillingPage() {
     setSelectedIsHistory(false);
     setAccount(null);
     setPayment(null);
+    setDetailLoading(false);
   }
 
   return (
@@ -383,215 +388,238 @@ export default function BillingPage() {
               <StatusBadge status={selected.status} />
             </div>
 
-            {account ? (
-              <section className="account-summary">
-                <div className="inline-between">
-                  <span>Base gravable</span>
-                  <strong>{formatCurrency(account.taxable_amount)}</strong>
-                </div>
-                <div className="inline-between">
-                  <span>
-                    {account.tax_name || "Impuesto"} ({account.tax_percentage}%)
-                  </span>
-                  <strong>{formatCurrency(account.tax_amount)}</strong>
-                </div>
-                <div className="inline-between">
-                  <span>Subtotal</span>
-                  <strong>{formatCurrency(account.subtotal)}</strong>
-                </div>
-                <div className="inline-between">
-                  <span>Descuento ({account.discount_percentage}%)</span>
-                  <strong>− {formatCurrency(account.discount_amount)}</strong>
-                </div>
-                <div className="inline-between">
-                  <span>Propina ({account.tip_percentage}%)</span>
-                  <strong>{formatCurrency(account.tip_amount)}</strong>
-                </div>
-                <div className="account-total">
-                  <span>Total</span>
-                  <strong>{formatCurrency(account.total)}</strong>
-                </div>
-              </section>
+            {detailLoading ? (
+              <Loading />
             ) : (
-              <p className="muted">
-                Este pedido todavía no tiene una cuenta generada.
-              </p>
-            )}
-
-            {!selectedIsHistory &&
-              (account ? canEditAccount : canCreateAccount) &&
-              !payment && (
-                <form className="form-stack" onSubmit={saveAccount}>
-                  <h3>{account ? "Ajustar cuenta" : "Generar cuenta"}</h3>
-
-                  <div className="form-grid form-grid--three">
-                    <label className="field">
-                      <span>Descuento (%)</span>
-                      <input
-                        className={
-                          !canEditBillingTerms ? "field-input--readonly" : ""
-                        }
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        value={form.discount}
-                        onChange={(event) =>
-                          setForm({ ...form, discount: event.target.value })
-                        }
-                        disabled={!canEditBillingTerms}
-                        required
-                      />
-                    </label>
-
-                    <label className="field">
-                      <span>Impuesto (%)</span>
-                      <input
-                        className={
-                          !canEditBillingTerms ? "field-input--readonly" : ""
-                        }
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        value={form.tax}
-                        onChange={(event) =>
-                          setForm({ ...form, tax: event.target.value })
-                        }
-                        disabled={!canEditBillingTerms}
-                        required
-                      />
-                    </label>
-
-                    <label className="field">
-                      <span>Propina (%)</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        value={form.tip}
-                        onChange={(event) =>
-                          setForm({ ...form, tip: event.target.value })
-                        }
-                        required
-                      />
-                    </label>
-                  </div>
-
-                  {Number(form.tax) > 0 && (
-                    <label className="field">
-                      <span>Nombre del impuesto</span>
-                      <input
-                        className={
-                          !canEditBillingTerms ? "field-input--readonly" : ""
-                        }
-                        value={form.taxName}
-                        onChange={(event) =>
-                          setForm({ ...form, taxName: event.target.value })
-                        }
-                        disabled={!canEditBillingTerms}
-                        required
-                      />
-                    </label>
-                  )}
-
-                  <button className="button button--primary" disabled={busy}>
-                    {busy
-                      ? "Guardando..."
-                      : account
-                        ? "Actualizar cuenta"
-                        : "Generar cuenta"}
-                  </button>
-                </form>
-              )}
-
-            {payment ? (
-              <section className="payment-summary">
-                <div className="inline-between">
-                  <h3>Pago #{payment.id}</h3>
-                  <StatusBadge status={payment.status} />
-                </div>
-
-                <p>
-                  Método:{" "}
-                  {payment.payment_method === "efectivo"
-                    ? "Efectivo"
-                    : "Tarjeta"}
-                </p>
-
-                <p>
-                  Valor: <strong>{formatCurrency(payment.amount)}</strong>
-                </p>
-
-                {payment.payment_method === "efectivo" && (
-                  <p>
-                    Cambio:{" "}
-                    <strong>{formatCurrency(payment.change_amount)}</strong>
+              <>
+                {account ? (
+                  <section className="account-summary">
+                    <div className="inline-between">
+                      <span>Base gravable</span>
+                      <strong>{formatCurrency(account.taxable_amount)}</strong>
+                    </div>
+                    <div className="inline-between">
+                      <span>
+                        {account.tax_name || "Impuesto"} (
+                        {account.tax_percentage}%)
+                      </span>
+                      <strong>{formatCurrency(account.tax_amount)}</strong>
+                    </div>
+                    <div className="inline-between">
+                      <span>Subtotal</span>
+                      <strong>{formatCurrency(account.subtotal)}</strong>
+                    </div>
+                    <div className="inline-between">
+                      <span>Descuento ({account.discount_percentage}%)</span>
+                      <strong>
+                        − {formatCurrency(account.discount_amount)}
+                      </strong>
+                    </div>
+                    <div className="inline-between">
+                      <span>Propina ({account.tip_percentage}%)</span>
+                      <strong>{formatCurrency(account.tip_amount)}</strong>
+                    </div>
+                    <div className="account-total">
+                      <span>Total</span>
+                      <strong>{formatCurrency(account.total)}</strong>
+                    </div>
+                  </section>
+                ) : (
+                  <p className="muted">
+                    Este pedido todavía no tiene una cuenta generada.
                   </p>
                 )}
 
                 {!selectedIsHistory &&
-                  payment.status === "registrado" &&
+                  (account ? canEditAccount : canCreateAccount) &&
+                  !payment && (
+                    <form className="form-stack" onSubmit={saveAccount}>
+                      <h3>{account ? "Ajustar cuenta" : "Generar cuenta"}</h3>
+
+                      <div className="form-grid form-grid--three">
+                        <label className="field">
+                          <span>Descuento (%)</span>
+                          <input
+                            className={
+                              !canEditBillingTerms
+                                ? "field-input--readonly"
+                                : ""
+                            }
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            value={form.discount}
+                            onChange={(event) =>
+                              setForm({
+                                ...form,
+                                discount: event.target.value,
+                              })
+                            }
+                            disabled={!canEditBillingTerms}
+                            required
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span>Impuesto (%)</span>
+                          <input
+                            className={
+                              !canEditBillingTerms
+                                ? "field-input--readonly"
+                                : ""
+                            }
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            value={form.tax}
+                            onChange={(event) =>
+                              setForm({ ...form, tax: event.target.value })
+                            }
+                            disabled={!canEditBillingTerms}
+                            required
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span>Propina (%)</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            value={form.tip}
+                            onChange={(event) =>
+                              setForm({ ...form, tip: event.target.value })
+                            }
+                            required
+                          />
+                        </label>
+                      </div>
+
+                      {Number(form.tax) > 0 && (
+                        <label className="field">
+                          <span>Nombre del impuesto</span>
+                          <input
+                            className={
+                              !canEditBillingTerms
+                                ? "field-input--readonly"
+                                : ""
+                            }
+                            value={form.taxName}
+                            onChange={(event) =>
+                              setForm({ ...form, taxName: event.target.value })
+                            }
+                            disabled={!canEditBillingTerms}
+                            required
+                          />
+                        </label>
+                      )}
+
+                      <button
+                        className="button button--primary"
+                        disabled={busy}
+                      >
+                        {busy
+                          ? "Guardando..."
+                          : account
+                            ? "Actualizar cuenta"
+                            : "Generar cuenta"}
+                      </button>
+                    </form>
+                  )}
+
+                {payment ? (
+                  <section className="payment-summary">
+                    <div className="inline-between">
+                      <h3>Pago #{payment.id}</h3>
+                      <StatusBadge status={payment.status} />
+                    </div>
+
+                    <p>
+                      Método:{" "}
+                      {payment.payment_method === "efectivo"
+                        ? "Efectivo"
+                        : "Tarjeta"}
+                    </p>
+
+                    <p>
+                      Valor: <strong>{formatCurrency(payment.amount)}</strong>
+                    </p>
+
+                    {payment.payment_method === "efectivo" && (
+                      <p>
+                        Cambio:{" "}
+                        <strong>{formatCurrency(payment.change_amount)}</strong>
+                      </p>
+                    )}
+
+                    {!selectedIsHistory &&
+                      payment.status === "registrado" &&
+                      canPay && (
+                        <button
+                          className="button button--danger button--full"
+                          onClick={() => void voidPayment()}
+                          disabled={busy}
+                        >
+                          {busy ? "Procesando..." : "Anular pago"}
+                        </button>
+                      )}
+                  </section>
+                ) : (
+                  !selectedIsHistory &&
+                  account &&
                   canPay && (
-                    <button
-                      className="button button--danger button--full"
-                      onClick={() => void voidPayment()}
-                      disabled={busy}
+                    <form
+                      className="form-stack payment-form"
+                      onSubmit={registerPayment}
                     >
-                      {busy ? "Procesando..." : "Anular pago"}
-                    </button>
-                  )}
-              </section>
-            ) : (
-              !selectedIsHistory &&
-              account &&
-              canPay && (
-                <form
-                  className="form-stack payment-form"
-                  onSubmit={registerPayment}
-                >
-                  <h3>Registrar pago</h3>
+                      <h3>Registrar pago</h3>
 
-                  <label className="field">
-                    <span>Método de pago</span>
-                    <select
-                      value={paymentMethod}
-                      onChange={(event) =>
-                        setPaymentMethod(event.target.value as PaymentMethod)
-                      }
-                    >
-                      <option value="efectivo">Efectivo</option>
-                      <option value="tarjeta">Tarjeta</option>
-                    </select>
-                  </label>
+                      <label className="field">
+                        <span>Método de pago</span>
+                        <select
+                          value={paymentMethod}
+                          onChange={(event) =>
+                            setPaymentMethod(
+                              event.target.value as PaymentMethod,
+                            )
+                          }
+                        >
+                          <option value="efectivo">Efectivo</option>
+                          <option value="tarjeta">Tarjeta</option>
+                        </select>
+                      </label>
 
-                  {paymentMethod === "efectivo" && (
-                    <label className="field">
-                      <span>Efectivo recibido</span>
-                      <input
-                        type="number"
-                        min={Number(account.total)}
-                        step="0.01"
-                        value={cashReceived}
-                        onChange={(event) =>
-                          setCashReceived(event.target.value)
-                        }
-                        required
-                      />
-                    </label>
-                  )}
+                      {paymentMethod === "efectivo" && (
+                        <label className="field">
+                          <span>Efectivo recibido</span>
+                          <input
+                            type="number"
+                            min={Number(account.total)}
+                            step="0.01"
+                            value={cashReceived}
+                            onChange={(event) =>
+                              setCashReceived(event.target.value)
+                            }
+                            required
+                          />
+                        </label>
+                      )}
 
-                  <button
-                    className="button button--primary button--full"
-                    disabled={busy}
-                  >
-                    {busy
-                      ? "Registrando..."
-                      : `Registrar ${formatCurrency(account.total)}`}
-                  </button>
-                </form>
-              )
+                      <button
+                        className="button button--primary button--full"
+                        disabled={busy}
+                      >
+                        {busy
+                          ? "Registrando..."
+                          : `Registrar ${formatCurrency(account.total)}`}
+                      </button>
+                    </form>
+                  )
+                )}
+              </>
             )}
 
             <div className="modal__actions">
