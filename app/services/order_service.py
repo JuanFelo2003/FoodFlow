@@ -67,16 +67,17 @@ class OrderService:
             raise ValueError("El pedido no existe")
 
         valid_transitions = {
-            OrderStatus.IN_PROGRESS: OrderStatus.SERVED,
-            OrderStatus.SERVED: OrderStatus.PAID,
+            OrderStatus.IN_PROGRESS: {OrderStatus.SERVED},
+            OrderStatus.SERVED: {
+                OrderStatus.PAID,
+                OrderStatus.IN_PROGRESS,
+            },
         }
 
-        expected_status = valid_transitions.get(order.status)
+        allowed_statuses = valid_transitions.get(order.status, set())
 
-        if expected_status != status:
-            raise ValueError(
-                "Transición de estado no permitida"
-            )
+        if status not in allowed_statuses:
+            raise ValueError("Transición de estado no permitida")
 
         table = self.table_repository.get_by_id(order.table_id)
 

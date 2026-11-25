@@ -120,9 +120,6 @@ La API valida los permisos en el backend; las rutas y la navegación del fronten
 
 ## Documentación del proyecto
 
-- `GUIA_INTEGRACION_FRONTEND.md`: incorporación por etapas y commits.
-- `AUDITORIA_ENDPOINTS.md`: inventario de los 38 endpoints y su uso en el frontend.
-- `NOTAS_TECNICAS.md`: cambios, decisiones, limitaciones y validaciones.
 - `frontend/README.md`: configuración y ejecución del frontend.
 
 ## Alcance
