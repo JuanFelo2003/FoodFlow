@@ -15,7 +15,8 @@ import ProtectedRoute from "./ProtectedRoute";
 
 function LoginRoute() {
   const { isAuthenticated, isLoading } = useAuth();
-  if (isLoading) return <div className="screen-loading">Verificando sesión...</div>;
+  if (isLoading)
+    return <div className="screen-loading">Verificando sesión...</div>;
   return isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />;
 }
 
@@ -33,12 +34,18 @@ export default function AppRouter() {
               <Route path="/employees" element={<EmployeesPage />} />
             </Route>
             <Route path="/menu" element={<MenuPage />} />
-            <Route element={<ProtectedRoute allowedRoles={["admin", "waiter", "cashier"]} />}>
+            <Route
+              element={
+                <ProtectedRoute allowedRoles={["admin", "waiter", "cashier"]} />
+              }
+            >
               <Route path="/tables" element={<TablesPage />} />
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/billing" element={<BillingPage />} />
             </Route>
-            <Route element={<ProtectedRoute allowedRoles={["admin", "kitchen"]} />}>
+            <Route
+              element={<ProtectedRoute allowedRoles={["admin", "kitchen"]} />}
+            >
               <Route path="/kitchen" element={<KitchenPage />} />
             </Route>
           </Route>

@@ -41,7 +41,7 @@ export default function BillingPage() {
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     discount: "0",
-    taxName: "IVA",
+    taxName: "INC",
     tax: "0",
     tip: "0",
   });
@@ -260,18 +260,22 @@ export default function BillingPage() {
             {account ? (
               <section className="account-summary">
                 <div className="inline-between">
-                  <span>Subtotal</span>
-                  <strong>{formatCurrency(account.subtotal)}</strong>
-                </div>
-                <div className="inline-between">
-                  <span>Descuento ({account.discount_percentage}%)</span>
-                  <strong>− {formatCurrency(account.discount_amount)}</strong>
+                  <span>Base gravable</span>
+                  <strong>{formatCurrency(account.taxable_amount)}</strong>
                 </div>
                 <div className="inline-between">
                   <span>
                     {account.tax_name || "Impuesto"} ({account.tax_percentage}%)
                   </span>
                   <strong>{formatCurrency(account.tax_amount)}</strong>
+                </div>
+                <div className="inline-between">
+                  <span>Subtotal</span>
+                  <strong>{formatCurrency(account.subtotal)}</strong>
+                </div>
+                <div className="inline-between">
+                  <span>Descuento ({account.discount_percentage}%)</span>
+                  <strong>− {formatCurrency(account.discount_amount)}</strong>
                 </div>
                 <div className="inline-between">
                   <span>Propina ({account.tip_percentage}%)</span>

@@ -15,7 +15,11 @@ async function handleResponse<T>(response: Response): Promise<T> {
       typeof data === "object" && data !== null && "detail" in data
         ? data.detail
         : null;
-    throw new Error(typeof detail === "string" ? detail : `Error en la solicitud (${response.status})`);
+    throw new Error(
+      typeof detail === "string"
+        ? detail
+        : `Error en la solicitud (${response.status})`,
+    );
   }
   return data as T;
 }
@@ -27,7 +31,10 @@ function expireSession(): void {
   window.dispatchEvent(new Event("foodflow:session-expired"));
 }
 
-export async function login(email: string, password: string): Promise<LoginResponse> {
+export async function login(
+  email: string,
+  password: string,
+): Promise<LoginResponse> {
   const response = await fetch(getApiUrl("/auth/login"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -36,7 +43,9 @@ export async function login(email: string, password: string): Promise<LoginRespo
   return handleResponse<LoginResponse>(response);
 }
 
-export async function refreshSession(refreshToken: string): Promise<AuthTokens> {
+export async function refreshSession(
+  refreshToken: string,
+): Promise<AuthTokens> {
   const response = await fetch(getApiUrl("/auth/refresh"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -69,7 +78,10 @@ export async function refreshAccessToken(): Promise<string | null> {
   return refreshPromise;
 }
 
-export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+export async function apiFetch(
+  path: string,
+  options: RequestInit = {},
+): Promise<Response> {
   const headers = new Headers(options.headers);
   const accessToken = sessionStorage.getItem("access_token");
   if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
@@ -82,7 +94,10 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
 
   const retryHeaders = new Headers(options.headers);
   retryHeaders.set("Authorization", `Bearer ${newAccessToken}`);
-  response = await fetch(getApiUrl(path), { ...options, headers: retryHeaders });
+  response = await fetch(getApiUrl(path), {
+    ...options,
+    headers: retryHeaders,
+  });
   if (response.status === 401) expireSession();
   return response;
 }

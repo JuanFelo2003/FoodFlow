@@ -15,6 +15,7 @@ import type {
 } from "../types/foodflow";
 import { EmptyState, Loading } from "../components/Feedback";
 import { StatusBadge } from "../components/StatusBadge";
+import { formatDate } from "../utils/format";
 
 export default function DashboardPage() {
   const { employee } = useAuth();
@@ -166,12 +167,7 @@ export default function DashboardPage() {
                           {tables.find((table) => table.id === order.table_id)
                             ?.number ?? order.table_id}
                         </td>
-                        <td>
-                          {new Date(order.created_at).toLocaleTimeString(
-                            "es-CO",
-                            { hour: "2-digit", minute: "2-digit" },
-                          )}
-                        </td>
+                        <td>{formatDate(order.created_at)}</td>
                         <td>
                           <StatusBadge status={order.status} />
                         </td>
