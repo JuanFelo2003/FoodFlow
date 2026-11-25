@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Navigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   employeesApi,
@@ -27,21 +27,26 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    if (employee?.role === "kitchen") {
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     setError("");
+
     try {
+      if (employee?.role === "kitchen") {
+        const orderData = await ordersApi.list();
+        setOrders(orderData);
+        return;
+      }
+
       const [tableData, orderData] = await Promise.all([
         tablesApi.list(),
         ordersApi.list(),
       ]);
+
       const [employeeData, menuData] =
         employee?.role === "admin"
           ? await Promise.all([employeesApi.list(), menuApi.list()])
           : [[], await menuApi.available()];
+
       setTables(tableData);
       setOrders(orderData);
       setEmployees(employeeData);
@@ -61,19 +66,113 @@ export default function DashboardPage() {
     void load();
   }, [load]);
 
-  if (employee?.role === "kitchen") return <Navigate to="/kitchen" replace />;
-
   const activeOrders = orders.filter((order) => order.status === "en_proceso");
+
   const servedOrders = orders.filter((order) => order.status === "servida");
+
   const occupiedTables = tables.filter(
     (table) => table.status !== "disponible",
   );
 
-  if (loading) return <Loading label="Preparando el resumen operativo..." />;
+  if (loading) {
+    return <Loading label="Preparando el resumen operativo..." />;
+  }
+
+  if (employee?.role === "kitchen") {
+    return (
+      <div className="stack-xl">
+        {error && <div className="feedback feedback--error">{error}</div>}
+
+        <section className="welcome-panel">
+          <div>
+            <span className="eyebrow">PANEL DE COCINA</span>
+            <h2>Hola, {employee?.name.split(" ")[0]}.</h2>
+            <p>Estos son los pedidos que están pendientes de preparación.</p>
+          </div>
+          <div className="welcome-panel__date">
+            {new Intl.DateTimeFormat("es-CO", {
+              dateStyle: "full",
+            }).format(new Date())}
+          </div>
+        </section>
+
+        <section className="metric-grid">
+          <article className="metric-card">
+            <span className="metric-card__label">
+              Pedidos pendientes de preparación
+            </span>
+            <strong>{activeOrders.length}</strong>
+            <span className="metric-card__hint">Pedidos en proceso</span>
+          </article>
+        </section>
+
+        <section className="content-grid">
+          <div className="panel">
+            <div className="panel__heading">
+              <div>
+                <span className="eyebrow">SEGUIMIENTO</span>
+                <h2>Pedidos pendientes</h2>
+              </div>
+              <Link className="text-link" to="/kitchen">
+                Ir a cocina ↗
+              </Link>
+            </div>
+
+            {activeOrders.length === 0 ? (
+              <EmptyState
+                title="No hay pedidos pendientes por preparar"
+                description="¡Todo está al día! Cuando se registre un nuevo pedido, aparecerá aquí."
+              />
+            ) : (
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Pedido</th>
+                      <th>Creado</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...activeOrders]
+                      .sort((a, b) => b.id - a.id)
+                      .slice(0, 6)
+                      .map((order) => (
+                        <tr key={order.id}>
+                          <td className="cell-strong">#{order.id}</td>
+                          <td>{formatDate(order.created_at)}</td>
+                          <td>
+                            <StatusBadge status={order.status} />
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="panel panel--accent">
+            <span className="eyebrow">ACCESOS RÁPIDOS</span>
+            <h2>Operación</h2>
+            <div className="quick-links">
+              <Link to="/kitchen">
+                Gestionar pedidos <span>→</span>
+              </Link>
+              <Link to="/menu">
+                Consultar menú <span>→</span>
+              </Link>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="stack-xl">
       {error && <div className="feedback feedback--error">{error}</div>}
+
       <section className="welcome-panel">
         <div>
           <span className="eyebrow">VISTA GENERAL</span>
@@ -81,11 +180,12 @@ export default function DashboardPage() {
           <p>Este es el estado actual de la operación del restaurante.</p>
         </div>
         <div className="welcome-panel__date">
-          {new Intl.DateTimeFormat("es-CO", { dateStyle: "full" }).format(
-            new Date(),
-          )}
+          {new Intl.DateTimeFormat("es-CO", {
+            dateStyle: "full",
+          }).format(new Date())}
         </div>
       </section>
+
       <section className="metric-grid">
         <article className="metric-card">
           <span className="metric-card__label">Mesas en operación</span>
@@ -97,11 +197,13 @@ export default function DashboardPage() {
             Mesas ocupadas o en atención
           </span>
         </article>
+
         <article className="metric-card">
           <span className="metric-card__label">Pedidos en preparación</span>
           <strong>{activeOrders.length}</strong>
           <span className="metric-card__hint">Pendientes de cocina</span>
         </article>
+
         <article className="metric-card">
           <span className="metric-card__label">Pedidos servidos</span>
           <strong>{servedOrders.length}</strong>
@@ -109,6 +211,7 @@ export default function DashboardPage() {
             Pendientes de facturación o pago
           </span>
         </article>
+
         {employee?.role === "admin" && (
           <article className="metric-card">
             <span className="metric-card__label">Empleados activos</span>
@@ -118,6 +221,7 @@ export default function DashboardPage() {
             </span>
           </article>
         )}
+
         {employee?.role !== "admin" && (
           <article className="metric-card">
             <span className="metric-card__label">Productos disponibles</span>
@@ -128,6 +232,7 @@ export default function DashboardPage() {
           </article>
         )}
       </section>
+
       <section className="content-grid">
         <div className="panel">
           <div className="panel__heading">
@@ -139,6 +244,7 @@ export default function DashboardPage() {
               Ver todos ↗
             </Link>
           </div>
+
           {orders.length === 0 ? (
             <EmptyState
               title="Todavía no hay pedidos"
@@ -178,6 +284,7 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+
         <div className="panel panel--accent">
           <span className="eyebrow">ACCESOS RÁPIDOS</span>
           <h2>Operación</h2>
@@ -187,9 +294,11 @@ export default function DashboardPage() {
                 Administrar mesas <span>→</span>
               </Link>
             )}
+
             <Link to="/orders">
               Consultar pedidos <span>→</span>
             </Link>
+
             {(employee?.role === "admin" ||
               employee?.role === "waiter" ||
               employee?.role === "cashier") && (
@@ -197,11 +306,13 @@ export default function DashboardPage() {
                 Cuentas y pagos <span>→</span>
               </Link>
             )}
+
             {employee?.role === "admin" && (
               <Link to="/employees">
                 Gestionar empleados <span>→</span>
               </Link>
             )}
+
             <Link to="/menu">
               Consultar menú <span>→</span>
             </Link>

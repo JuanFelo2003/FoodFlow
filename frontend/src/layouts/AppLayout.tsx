@@ -15,7 +15,7 @@ const navigation: NavigationItem[] = [
   {
     label: "Resumen",
     path: "/dashboard",
-    roles: ["admin", "waiter", "cashier"],
+    roles: ["admin", "waiter", "cashier", "kitchen"],
     icon: "▦",
   },
   { label: "Cocina", path: "/kitchen", roles: ["admin", "kitchen"], icon: "◫" },
@@ -63,7 +63,7 @@ export default function AppLayout() {
       <aside className="sidebar">
         <div className="brand">
           <span className="brand__mark">F</span>
-          <span>foodflow</span>
+          <span>FoodFlow</span>
         </div>
         <div className="sidebar__caption">OPERACIÓN</div>
         <nav className="navigation" aria-label="Navegación principal">
