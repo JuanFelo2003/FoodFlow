@@ -55,16 +55,12 @@ class AccountService:
         existing_account = self.repository.get_by_order(order_id)
 
         if existing_account is not None:
-            raise ValueError(
-                "El pedido ya tiene una cuenta"
-            )
+            raise ValueError("El pedido ya tiene una cuenta")
 
         order_items = self.order_item_repository.get_by_order(order_id)
 
         if not order_items:
-            raise ValueError(
-                "El pedido no tiene productos"
-            )
+            raise ValueError("El pedido no tiene productos")
 
         subtotal = sum(
             (
@@ -75,9 +71,7 @@ class AccountService:
         )
 
         discount_amount = (
-            subtotal
-            * discount_percentage
-            / Decimal("100")
+            subtotal * discount_percentage / Decimal("100")
         )
 
         amount_after_discount = subtotal - discount_amount
@@ -201,9 +195,7 @@ class AccountService:
         )
 
         if not order_items:
-            raise ValueError(
-                "El pedido no tiene productos"
-            )
+            raise ValueError("El pedido no tiene productos")
 
         subtotal = sum(
             (
@@ -214,9 +206,7 @@ class AccountService:
         )
 
         discount_amount = (
-            subtotal
-            * discount_percentage
-            / Decimal("100")
+            subtotal * discount_percentage / Decimal("100")
         )
 
         amount_after_discount = subtotal - discount_amount
@@ -248,48 +238,136 @@ class AccountService:
 
         total = amount_after_discount + tip_amount
 
-        subtotal = subtotal.quantize(
+        account.subtotal = subtotal.quantize(
             Decimal("0.01"),
             rounding=ROUND_HALF_UP,
         )
 
-        discount_amount = discount_amount.quantize(
-            Decimal("0.01"),
-            rounding=ROUND_HALF_UP,
-        )
-
-        taxable_amount = taxable_amount.quantize(
-            Decimal("0.01"),
-            rounding=ROUND_HALF_UP,
-        )
-
-        tax_amount = tax_amount.quantize(
-            Decimal("0.01"),
-            rounding=ROUND_HALF_UP,
-        )
-
-        tip_amount = tip_amount.quantize(
-            Decimal("0.01"),
-            rounding=ROUND_HALF_UP,
-        )
-
-        total = total.quantize(
-            Decimal("0.01"),
-            rounding=ROUND_HALF_UP,
-        )
-
-        account.subtotal = subtotal
         account.discount_percentage = discount_percentage
-        account.discount_amount = discount_amount
-        account.taxable_amount = taxable_amount
+        account.discount_amount = discount_amount.quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
+
+        account.taxable_amount = taxable_amount.quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
+
         account.tax_name = tax_name.strip() if tax_name else None
         account.tax_percentage = tax_percentage
-        account.tax_amount = tax_amount
+        account.tax_amount = tax_amount.quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
+
         account.tip_percentage = tip_percentage
-        account.tip_amount = tip_amount
-        account.total = total
+        account.tip_amount = tip_amount.quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
+
+        account.total = total.quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
 
         return self.repository.update(account)
+
+    def recalculate_account(self, order_id: int) -> Account | None:
+        account = self.repository.get_by_order(order_id)
+
+        if account is None:
+            return None
+
+        order = self.order_repository.get_by_id(order_id)
+
+        if order is None:
+            raise ValueError("El pedido no existe")
+
+        if order.status != OrderStatus.SERVED:
+            raise ValueError(
+                "Solo se puede recalcular una cuenta de un pedido servido"
+            )
+
+        order_items = self.order_item_repository.get_by_order(order_id)
+
+        if not order_items:
+            raise ValueError("El pedido no tiene productos")
+
+        subtotal = sum(
+            (
+                item.unit_price * item.quantity
+                for item in order_items
+            ),
+            Decimal("0.00"),
+        )
+
+        discount_amount = (
+            subtotal
+            * account.discount_percentage
+            / Decimal("100")
+        )
+
+        amount_after_discount = subtotal - discount_amount
+
+        if account.tax_percentage > 0:
+            if not account.tax_name or not account.tax_name.strip():
+                raise ValueError(
+                    "El nombre del impuesto es obligatorio"
+                )
+
+            tax_amount = (
+                amount_after_discount
+                * account.tax_percentage
+                / (Decimal("100") + account.tax_percentage)
+            )
+
+            taxable_amount = amount_after_discount - tax_amount
+
+        else:
+            tax_amount = Decimal("0.00")
+            taxable_amount = amount_after_discount
+
+        tip_amount = (
+            amount_after_discount
+            * account.tip_percentage
+            / Decimal("100")
+        )
+
+        total = amount_after_discount + tip_amount
+
+        account.subtotal = subtotal.quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
+
+        account.discount_amount = discount_amount.quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
+
+        account.taxable_amount = taxable_amount.quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
+
+        account.tax_amount = tax_amount.quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
+
+        account.tip_amount = tip_amount.quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
+
+        account.total = total.quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
+
+        return account
 
     def get_account(
         self,

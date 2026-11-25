@@ -5,6 +5,7 @@ from app.models.table import TableStatus
 from app.repositories.order_repository import OrderRepository
 from app.repositories.table_repository import TableRepository
 from app.repositories.order_item_repository import OrderItemRepository
+from app.services.account_service import AccountService
 
 
 class OrderService:
@@ -13,6 +14,7 @@ class OrderService:
         self.repository = OrderRepository(db)
         self.table_repository = TableRepository(db)
         self.order_item_repository = OrderItemRepository(db)
+        self.account_service = AccountService(db)
 
     def create_order(self, table_id: int) -> Order:
         if table_id <= 0:
@@ -85,6 +87,9 @@ class OrderService:
             raise ValueError("La mesa asociada al pedido no existe")
 
         order.status = status
+
+        if status == OrderStatus.SERVED:
+            self.account_service.recalculate_account(order_id)
 
         if status == OrderStatus.PAID:
             table.status = TableStatus.AVAILABLE

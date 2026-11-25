@@ -70,6 +70,11 @@ def create_account(
 ):
     service = AccountService(db)
 
+    if current_employee["role"] == "waiter":
+        discount_percentage = Decimal("0")
+        tax_name = "INC"
+        tax_percentage = Decimal("8")
+
     try:
         return service.create_account(
             order_id=order_id,
@@ -94,10 +99,23 @@ def update_account(
     tip_percentage: Decimal,
     db: Session = Depends(get_db),
     current_employee: dict = Depends(
-        require_role("admin", "waiter")
+        require_role("admin", "waiter", "cashier")
     ),
 ):
     service = AccountService(db)
+
+    if current_employee["role"] == "waiter":
+        account = service.get_account(account_id)
+
+        if account is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="La cuenta no existe",
+            )
+
+        discount_percentage = account.discount_percentage
+        tax_name = account.tax_name
+        tax_percentage = account.tax_percentage
 
     try:
         return service.update_account(

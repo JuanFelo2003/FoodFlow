@@ -46,6 +46,15 @@ def get_orders_by_status(
         require_role("admin", "waiter", "cashier", "kitchen")
     ),
 ):
+    if (
+        order_status == OrderStatus.PAID
+        and current_employee["role"] not in ("admin", "cashier")
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo el cajero o el administrador pueden consultar el historial de facturación",
+        )
+
     service = OrderService(db)
 
     return service.get_orders_by_status(order_status)
