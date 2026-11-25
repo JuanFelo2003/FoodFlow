@@ -28,6 +28,8 @@ const statusFilters: { value: "all" | OrderStatus; label: string }[] = [
 export default function OrdersPage() {
   const { employee } = useAuth();
   const canEdit = employee?.role === "admin" || employee?.role === "waiter";
+  const canMarkServed = employee?.role === "admin";
+  const canReopen = employee?.role === "admin" || employee?.role === "waiter";
   const [orders, setOrders] = useState<Order[]>([]);
   const [tables, setTables] = useState<RestaurantTable[]>([]);
   const [filter, setFilter] = useState<"all" | OrderStatus>("all");
@@ -198,6 +200,26 @@ export default function OrdersPage() {
     }
   }
 
+  async function reopenOrder(order: Order) {
+    if (
+      !window.confirm(
+        `¿Reabrir el pedido #${order.id}? Volverá a aparecer en cocina.`,
+      )
+    )
+      return;
+    try {
+      await ordersApi.setStatus(order.id, "en_proceso");
+      setNotice(`Pedido #${order.id} reabierto. Ahora está en preparación.`);
+      await load(filter);
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "No se pudo reabrir el pedido.",
+      );
+    }
+  }
+
   async function cancelOrder(order: Order) {
     if (
       !window.confirm(
@@ -314,12 +336,20 @@ export default function OrdersPage() {
                         >
                           Detalle
                         </button>
-                        {canEdit && order.status === "en_proceso" && (
+                        {canMarkServed && order.status === "en_proceso" && (
                           <button
                             className="button button--small button--outline"
                             onClick={() => void markServed(order)}
                           >
                             Marcar servido
+                          </button>
+                        )}
+                        {canReopen && order.status === "servida" && (
+                          <button
+                            className="button button--small button--outline"
+                            onClick={() => void reopenOrder(order)}
+                          >
+                            Reabrir pedido
                           </button>
                         )}
                         {canEdit && order.status === "en_proceso" && (
