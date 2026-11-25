@@ -1,53 +1,46 @@
 # FoodFlow
 
-Sistema POS para la gestión básica de un restaurante.
+Sistema POS para la gestión de restaurantes. El proyecto incluye una API REST construida con FastAPI y una aplicación web construida con React y TypeScript.
 
 ## Tecnologías
 
-- Python
+### Backend
+
+- Python 3.12+
 - FastAPI
 - PostgreSQL
-- SQLAlchemy
-- Alembic
-- JWT para autenticación
-- Supabase Storage para imágenes del menú
-- Swagger / OpenAPI
+- SQLAlchemy y Alembic
+- Supabase Auth
+- Supabase Storage
+- Pydantic
+
+### Frontend
+
+- React
+- TypeScript
+- Vite
+- React Router
+- CSS modular con variables centralizadas
 
 ## Requisitos
 
 - Python 3.12 o superior
 - PostgreSQL
-- Cuenta/proyecto de Supabase para el almacenamiento de imágenes
+- Proyecto de Supabase con Auth y Storage configurados
+- Node.js 20.19+ o 22.12+
+- npm
 
-## Instalación
+## Configuración del backend
 
-### 1. Clonar el repositorio
-
-Clonar el repositorio y ubicarse dentro de la carpeta del proyecto.
-
-### 2. Crear el entorno virtual
+Desde la raíz del proyecto:
 
 ```powershell
 python -m venv .venv
-```
-
-Activar el entorno virtual:
-
-```powershell
 .\.venv\Scripts\Activate.ps1
-```
-
-### 3. Instalar las dependencias
-
-```powershell
 pip install -r requirements.txt
 ```
 
-### 4. Configurar las variables de entorno
-
-Crear un archivo `.env` tomando como referencia `.env.example`.
-
-El archivo debe contener las siguientes variables:
+Crea `.env` a partir de `.env.example` y configura las credenciales reales:
 
 ```env
 DATABASE_HOST=
@@ -55,69 +48,80 @@ DATABASE_PORT=
 DATABASE_NAME=
 DATABASE_USER=
 DATABASE_PASSWORD=
-JWT_SECRET_KEY=
 SUPABASE_URL=
 SUPABASE_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 SUPABASE_BUCKET=menu-images
 ```
 
-Las credenciales reales no deben subirse al repositorio. El archivo `.env` está excluido mediante `.gitignore`.
-
-### 5. Ejecutar las migraciones
+Ejecuta las migraciones:
 
 ```powershell
 alembic upgrade head
 ```
 
-### 6. Iniciar el servidor
+Inicia la API:
 
 ```powershell
 uvicorn app.main:app --reload
 ```
 
-## Documentación de la API
+Swagger está disponible en `http://127.0.0.1:8000/docs`.
 
-Con el servidor en ejecución, la documentación interactiva de Swagger está disponible en:
+## Configuración del frontend
 
-**http://127.0.0.1:8000/docs**
+Desde la carpeta `frontend`:
 
-## Roles del sistema
+```powershell
+npm ci
+```
 
-FoodFlow maneja cuatro roles:
+Crea `frontend/.env` a partir de `frontend/.env.example`:
 
-- **Administrador**
-- **Mesero**
-- **Cajero**
-- **Cocina**
+```env
+VITE_API_URL=/api
+```
 
-El acceso a las operaciones está controlado mediante autenticación JWT y permisos según el rol.
+Inicia la aplicación:
 
-## Funcionalidades principales
+```powershell
+npm run dev
+```
 
-- Autenticación de empleados
-- Gestión de empleados
-- Gestión del menú
-- Carga de imágenes de productos
-- Gestión de mesas
-- Creación y gestión de pedidos
-- Gestión de productos de los pedidos
-- Gestión de estados de preparación
-- Generación de cuentas
-- Registro y anulación de pagos
-- Control de acceso por roles
-- Persistencia de información en PostgreSQL
+El servidor de desarrollo de Vite reenvía las solicitudes `/api` a `http://127.0.0.1:8000`. Para otros entornos, configura el proxy o la URL pública del backend según el despliegue.
+
+Verifica el frontend:
+
+```powershell
+npm run lint
+npm run build
+```
+
+## Roles
+
+- **Administrador:** gestión de empleados, menú, mesas, pedidos, cuentas y pagos. También puede supervisar cocina.
+- **Mesero:** consulta del menú, gestión de mesas y pedidos, y generación/ajuste de cuentas.
+- **Cajero:** consulta de operación y cuentas, registro y anulación de pagos.
+- **Cocina:** consulta de pedidos en preparación y cambio de estado a servido. El panel consulta automáticamente cada cinco segundos.
+
+La API valida los permisos en el backend; las rutas y la navegación del frontend también se adaptan al rol.
+
+## Funcionalidades
+
+- Autenticación y renovación de sesión con Supabase Auth.
+- Gestión de empleados y roles.
+- Gestión de menú e imágenes.
+- Gestión de mesas y estados.
+- Creación y administración de pedidos y sus productos.
+- Panel de cocina con actualización periódica.
+- Generación y ajuste de cuentas.
+- Registro y anulación de pagos.
+- Protección de rutas y manejo de errores.
+
+## Documentación del proyecto
+
+- `frontend/README.md`: configuración y ejecución del frontend.
 
 ## Alcance
 
-FoodFlow corresponde a un MVP de un sistema POS para restaurantes. Esta versión se concentra en la operación interna del restaurante.
-
-### Fuera del alcance
-
-- Pedidos en línea
-- Pagos electrónicos
-- Reservas
-- Domicilios
-- Inventario
-- Fidelización
-- Analítica y BI
-- Interacción directa con clientes
+FoodFlow es un MVP de gestión interna de restaurantes. No incluye pedidos en línea, reservas, domicilios, inventario, fidelización ni analítica/BI.

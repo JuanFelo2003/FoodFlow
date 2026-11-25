@@ -1,5 +1,5 @@
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
@@ -33,7 +33,7 @@ class Order(Base):
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime,
+        DateTime(timezone=True),
         nullable=False,
-        default=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
     )

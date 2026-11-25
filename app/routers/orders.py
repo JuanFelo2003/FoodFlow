@@ -46,6 +46,15 @@ def get_orders_by_status(
         require_role("admin", "waiter", "cashier", "kitchen")
     ),
 ):
+    if (
+        order_status == OrderStatus.PAID
+        and current_employee["role"] not in ("admin", "cashier")
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo el cajero o el administrador pueden consultar el historial de facturación",
+        )
+
     service = OrderService(db)
 
     return service.get_orders_by_status(order_status)
@@ -102,11 +111,20 @@ def update_order_status(
 ):
     if (
         order_status == OrderStatus.SERVED
-        and current_employee["role"] not in ("admin", "waiter", "kitchen")
+        and current_employee["role"] not in ("admin", "kitchen")
     ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Solo el mesero, cocina o administrador pueden marcar el pedido como servido",
+            detail="Solo cocina o el administrador pueden marcar el pedido como servido",
+        )
+
+    if (
+        order_status == OrderStatus.IN_PROGRESS
+        and current_employee["role"] not in ("admin", "waiter")
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo el mesero o el administrador pueden reabrir un pedido",
         )
 
     if (
