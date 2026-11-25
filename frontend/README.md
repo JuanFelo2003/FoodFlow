@@ -33,7 +33,6 @@ Vite reenvía las solicitudes `/api` al backend local. Si el backend se ejecuta 
 ## Verificaciones
 
 ```bash
-npm run lint
 npm run build
 ```
 
