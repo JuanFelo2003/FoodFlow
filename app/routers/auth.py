@@ -1,3 +1,6 @@
+
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from supabase import create_client
@@ -6,6 +9,8 @@ from app.core.config import settings
 from app.db.session import get_db
 from app.schemas.auth import LoginRequest, RefreshRequest
 from app.services.auth_service import AuthService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
@@ -17,6 +22,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     try:
         result = auth_service.authenticate(payload.email, payload.password)
     except Exception:
+        logger.exception("Error interno durante la autenticación")
         raise HTTPException(
             status_code=503,
             detail="No fue posible completar la autenticación. Intenta de nuevo.",
@@ -60,6 +66,7 @@ def refresh(payload: RefreshRequest):
     except HTTPException:
         raise
     except Exception:
+        logger.exception("Error interno durante la renovación de sesión")
         raise HTTPException(
             status_code=401,
             detail="No fue posible renovar la sesión. Inicia sesión nuevamente.",
